@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comparison of Resale HDB Flats Prices in Singapore in 2020 and 2024</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      text-align: center;
+      color: #8c3e3e;
+      font-size: 35px;
+    }
+    .description {
+      margin: 20px 0;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-left: 4px solid #007bff;
+    }
+    .chart-container {
+      margin: 40px 0;
+      text-align: center;
+    }
+    .chart-title {
+      font-weight: bold;
+      margin-bottom: 40px;
+      color: #b37727;
+    }
+    text {
+      font-size: 14px;
+      fill: #c46821;
+      text-anchor: middle;
+      font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif
+    }
+    .legend {
+      font-size: 14px;
+      fill: #333;
+    }
+    .axis line, .axis path {
+      stroke: #ccc;
+    }
+    .grid line {
+      stroke: #eee;
+      stroke-dasharray: 2;
+    } 
+    bottom {
+      font-size: 12px;
+      fill: #333;
+      text-anchor: middle;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Comparison of Resale HDB Flats Prices in Singapore in 2020 and 2024</h1>
+  
+
+  <div class="description">
+    <p> 
+      This analysis compares the price changes of resale HDB flats by region during the 2020 epidemic with those after the 2024 epidemic. 
+    </p>The charts below show the comparison of average prices in key regions, as well as notable areas of price fluctuations.
+      </p>
+    <p> 
+      Through our analyses, we hope to shed light on the recovery performance of the Singapore property market during and after the epidemic, and provide data to support market decisions.
+      </p>
+  </div>
+  
+ 
+  <div class="chart-container">
+    <div class="chart-title"> 
+      Average resale price in 2020 vs. 2024 by region
+      </div>
+ 
+    <div id="chart"></div>
+  </div>
+
+ 
+  <script>
+   
+    const data = [
+      {"town": "Ang Mo Kio", "year": "2020", "resale_price": 400000},
+      {"town": "Ang Mo Kio", "year": "2024", "resale_price": 450000},
+      {"town": "Bishan", "year": "2020", "resale_price": 600000},
+      {"town": "Bishan", "year": "2024", "resale_price": 700000},
+      {"town": "Central Area", "year": "2020", "resale_price": 650000},
+      {"town": "Central Area", "year": "2024", "resale_price": 750000},
+      {"town": "Yishun", "year": "2020", "resale_price": 380000},
+      {"town": "Yishun", "year": "2024", "resale_price": 530000}
+    ];
+
+   
+    const width = 928;
+    const height = 600;
+    const margin = {top: 20, right: 100, bottom: 40, left: 80};
+
+    
+    const svg = d3.select("#chart")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .style("max-width", "100%")
+      .style("height", "auto");
+
+   
+    const fx = d3.scaleBand()
+      .domain([...new Set(data.map(d => d.town))])
+      .range([margin.left, width - margin.right])
+      .paddingInner(0.2);
+
+   
+    const years = ["2020", "2024"];
+    const x = d3.scaleBand()
+      .domain(years)
+      .range([0, fx.bandwidth()])
+      .padding(0.2);
+
+    
+    const color = d3.scaleOrdinal()
+      .domain(years)
+      .range(["#1f77b4", "#ff7f0e"]);
+
+    
+    const y = d3.scaleLinear()
+      .domain([0, d3.max(data, d => d.resale_price)]).nice()
+      .range([height - margin.bottom, margin.top]);
+
+  
+svg.append("g")
+  .attr("class", "grid")
+  .attr("transform", `translate(${margin.left},0)`)
+  .call(d3.axisLeft(y)
+    .tickSize(-width + margin.left + margin.right) 
+    .tickFormat("")) 
+  .call(g => g.select(".domain").remove())
+  .selectAll("line")
+  .attr("stroke", "#333") 
+  .attr("stroke-width", 3.5) 
+  .attr("stroke-dasharray", "4,2");
+
+    // 绘制柱状图
+    const bars = svg.append("g")
+      .selectAll("g")
+      .data(d3.group(data, d => d.town)) 
+      .join("g")
+        .attr("transform", ([town]) => `translate(${fx(town)},0)`)
+      .selectAll("rect")
+      .data(([, values]) => values)
+      .join("rect")
+        .attr("x", d => x(d.year))
+        .attr("y", d => y(0)) 
+        .attr("width", x.bandwidth())
+        .attr("height", 0) 
+        .attr("fill", d => color(d.year))
+      .transition() 
+        .duration(3500) 
+        .attr("y", d => y(d.resale_price)) 
+        .attr("height", d => y(0) - y(d.resale_price));
+
+    // 在柱体顶部显示数据
+    svg.append("g")
+      .selectAll("g")
+      .data(d3.group(data, d => d.town))
+      .join("g")
+        .attr("transform", ([town]) => `translate(${fx(town)},0)`)
+      .selectAll("text")
+      .data(([, values]) => values)
+      .join("text")
+        .attr("x", d => x(d.year) + x.bandwidth() / 2)
+        .attr("y", d => y(d.resale_price) - 5) 
+        .text(d => d.resale_price.toLocaleString()) 
+        .attr("opacity", 0) 
+      .transition() 
+        .duration(5000)
+        .attr("opacity", 1); 
+
+    // 添加横轴
+    svg.append("g")
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(fx))
+      .call(g => g.selectAll(".domain").remove());
+
+      svg.append("g")
+  .attr("transform", `translate(${margin.left},0)`)
+  .call(d3.axisLeft(y)
+    .ticks(null, "s")
+    .tickPadding(40)) 
+  .call(g => g.select(".domain").remove());
+
+    const legend = svg.append("g")
+      .attr("transform", `translate(${width - margin.right + 10},${height - margin.bottom - 80})`);
+
+    years.forEach((year, i) => {
+      legend.append("rect")
+        .attr("x", 0)
+        .attr("y", i * 20)
+        .attr("width", 15)
+        .attr("height", 15)
+        .attr("fill", color(year));
+      
+      legend.append("text")
+        .attr("x", 40) 
+        .attr("y", i * 20 + 12)
+        .text(year)
+        .attr("class", "legend");
+    });
+  </script>
+</body>
+</html>
